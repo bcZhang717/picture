@@ -1,10 +1,12 @@
 package com.zbc.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zbc.constants.UserConstant;
 import com.zbc.domain.pojo.User;
+import com.zbc.domain.vo.UserLoginVO;
 import com.zbc.exception.BusinessException;
 import com.zbc.mapper.UserMapper;
 import com.zbc.service.UserService;
@@ -12,9 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 
 import static com.zbc.enums.UserRoleEnum.USER;
-import static com.zbc.exception.ErrorCode.PARAMS_ERROR;
+import static com.zbc.exception.ErrorCode.*;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -60,7 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .build();
         boolean saved = this.save(user);
         if (!saved) {
-            throw new BusinessException(PARAMS_ERROR, "注册失败");
+            throw new BusinessException(SYSTEM_ERROR, "注册失败");
         }
         // 7. 返回用户 id
         return user.getId();
@@ -73,6 +76,72 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public String getEncryptPassword(String password) {
         final String SALT = "zbc";
         return DigestUtils.md5DigestAsHex((SALT + password).getBytes());
+    }
+
+    /**
+     * 用户登录
+     */
+    @Override
+    public UserLoginVO userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+        // 1. 字段校验
+        if (StrUtil.hasBlank(userAccount, userPassword)) {
+            throw new BusinessException(PARAMS_ERROR, "参数为空");
+        }
+        // 账号不能小于 4 位
+        if (userAccount.length() < 4) {
+            throw new BusinessException(PARAMS_ERROR, "账号不能小于4位");
+        }
+        // 密码不能小于 8 位
+        if (userPassword.length() < 8) {
+            throw new BusinessException(PARAMS_ERROR, "密码不能小于8位");
+        }
+        // 2. 密码加密
+        String encryptPassword = getEncryptPassword(userPassword);
+        // 3. 查询用户是否存在
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userAccount", userAccount);
+        queryWrapper.eq("userPassword", encryptPassword);
+        User user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            throw new BusinessException(PARAMS_ERROR, "用户账号或密码输入错误");
+        }
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        UserLoginVO userLoginVO = new UserLoginVO();
+        BeanUtil.copyProperties(user, userLoginVO);
+        return userLoginVO;
+    }
+
+    /**
+     * 获取当前登录用户
+     */
+    @Override
+    public User getCurrentUser(HttpServletRequest request) {
+        // 判断当前用户是否登录
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new BusinessException(NOT_LOGIN_ERROR, "用户未登录");
+        }
+        Long userId = currentUser.getId();
+        currentUser = userMapper.selectById(userId);
+        if (currentUser == null) {
+            throw new BusinessException(NOT_LOGIN_ERROR);
+        }
+        return currentUser;
+    }
+
+    /**
+     * 用户注销
+     */
+    @Override
+    public boolean userLogout(HttpServletRequest request) {
+        // 判断当前用户是否登录
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        if (userObj == null) {
+            throw new BusinessException(NOT_LOGIN_ERROR, "用户未登录");
+        }
+        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+        return true;
     }
 }
 

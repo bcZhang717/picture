@@ -1,4 +1,4 @@
-package com.zbc.domain.response;
+package com.zbc.domain.vo;
 
 import com.zbc.exception.ErrorCode;
 import lombok.Data;

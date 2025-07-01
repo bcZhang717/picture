@@ -1,9 +1,14 @@
-package com.zbc.domain.request;
+package com.zbc.domain.dto;
 
 import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 用户注册DTO
+ *
+ * @author zbc
+ */
 @Data
 public class UserRegisterRequest implements Serializable {
 

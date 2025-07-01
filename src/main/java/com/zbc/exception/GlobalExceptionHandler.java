@@ -1,6 +1,6 @@
 package com.zbc.exception;
 
-import com.zbc.domain.response.BaseResponse;
+import com.zbc.domain.vo.BaseResponse;
 import com.zbc.utils.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;

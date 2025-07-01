@@ -1,6 +1,6 @@
 package com.zbc.utils;
 
-import com.zbc.domain.response.BaseResponse;
+import com.zbc.domain.vo.BaseResponse;
 import com.zbc.exception.ErrorCode;
 
 public class ResultUtils {

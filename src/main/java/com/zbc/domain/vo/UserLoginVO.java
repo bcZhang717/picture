@@ -1,10 +1,6 @@
-package com.zbc.domain.pojo;
+package com.zbc.domain.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -14,29 +10,18 @@ import java.util.Date;
  *
  * @author zbc
  */
-@TableName(value = "user")
 @Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class User implements Serializable {
-    @TableField(exist = false)
-    private static final long serialVersionUID = 641098805907200190L;
+public class UserLoginVO implements Serializable {
+    private static final long serialVersionUID = -2219348569614019111L;
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
      * 账号
      */
     private String userAccount;
-
-    /**
-     * 密码
-     */
-    private String userPassword;
 
     /**
      * 用户昵称
@@ -73,9 +58,4 @@ public class User implements Serializable {
      */
     private Date updateTime;
 
-    /**
-     * 是否删除
-     */
-    @TableLogic
-    private Integer isDelete;
 }

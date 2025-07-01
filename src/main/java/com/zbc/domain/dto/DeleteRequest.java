@@ -1,4 +1,4 @@
-package com.zbc.domain.request;
+package com.zbc.domain.dto;
 
 import lombok.Data;
 
