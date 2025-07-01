@@ -1,20 +1,27 @@
 package com.zbc.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zbc.constants.UserConstant;
+import com.zbc.domain.dto.user.UserQueryRequest;
 import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.UserLoginVO;
+import com.zbc.domain.vo.UserVO;
 import com.zbc.exception.BusinessException;
 import com.zbc.mapper.UserMapper;
 import com.zbc.service.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.zbc.enums.UserRoleEnum.USER;
 import static com.zbc.exception.ErrorCode.*;
@@ -142,6 +149,68 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
         return true;
+    }
+
+    /**
+     * 获取脱敏后的UserLoginVO
+     */
+    @Override
+    public UserLoginVO getLoginUserVO(User user) {
+        if (user == null) {
+            throw new BusinessException(PARAMS_ERROR);
+        }
+        UserLoginVO userLoginVO = new UserLoginVO();
+        BeanUtil.copyProperties(user, userLoginVO);
+        return userLoginVO;
+    }
+
+    /**
+     * 获取脱敏后的UserVO
+     */
+    @Override
+    public UserVO getUserVO(User user) {
+        if (user == null) {
+            throw new BusinessException(PARAMS_ERROR);
+        }
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user, userVO);
+        return userVO;
+    }
+
+    /**
+     * 获取脱敏后的用户列表
+     */
+    @Override
+    public List<UserVO> listUserVO(List<User> userList) {
+        if (CollectionUtils.isEmpty(userList)) {
+            return new ArrayList<>();
+        }
+        return userList.stream().map(this::getUserVO).collect(Collectors.toList());
+    }
+
+    /**
+     * 封装查询条件
+     */
+    @Override
+    public QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BusinessException(PARAMS_ERROR, "请求参数为空");
+        }
+        Long id = userQueryRequest.getId();
+        String userName = userQueryRequest.getUserName();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userRole = userQueryRequest.getUserRole();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ObjUtil.isNull(id), "id", id);
+        queryWrapper.like(StrUtil.isNotBlank(userName), "userName", userName);
+        queryWrapper.like(StrUtil.isNotBlank(userAccount), "userAccount", userAccount);
+        queryWrapper.like(StrUtil.isNotBlank(userProfile), "userProfile", userProfile);
+        queryWrapper.eq(StrUtil.isNotBlank(userRole), "userRole", userRole);
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        return queryWrapper;
     }
 }
 
