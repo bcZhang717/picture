@@ -44,7 +44,6 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
-
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
