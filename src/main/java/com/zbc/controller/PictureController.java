@@ -12,6 +12,7 @@ import com.zbc.domain.dto.picture.PictureUploadRequest;
 import com.zbc.domain.pojo.Picture;
 import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.BaseResponse;
+import com.zbc.domain.vo.PictureTagCategory;
 import com.zbc.domain.vo.PictureVO;
 import com.zbc.exception.BusinessException;
 import com.zbc.exception.ErrorCode;
@@ -25,7 +26,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/picture")
@@ -181,4 +184,15 @@ public class PictureController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
+
+    @GetMapping("/tag_category")
+    public BaseResponse<PictureTagCategory> listPictureTagCategory() {
+        PictureTagCategory pictureTagCategory = new PictureTagCategory();
+        List<String> tagList = Arrays.asList("热门", "搞笑", "生活", "高清", "艺术", "校园", "背景", "简历", "创意");
+        List<String> categoryList = Arrays.asList("模板", "电商", "表情包", "素材", "海报");
+        pictureTagCategory.setTagList(tagList);
+        pictureTagCategory.setCategoryList(categoryList);
+        return ResultUtils.success(pictureTagCategory);
+    }
+
 }
