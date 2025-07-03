@@ -1,0 +1,8 @@
+# 对象存储配置（需要从腾讯云获取）
+cos:
+  client:
+    host: https://zbc-picture-1335849645.cos.ap-chengdu.myqcloud.com # 存储桶域名
+    secretId: AKIDHWYQ92iBQUKwKWZBcrsgIFcqukPs79xa
+    secretKey: SghU5UfWCf1CAuRlslQs66tTlqhKjvte
+    region: ap-chengdu
+    bucket: zbc-picture-1335849645 # 存储桶名称

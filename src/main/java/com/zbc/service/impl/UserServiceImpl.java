@@ -10,6 +10,7 @@ import com.zbc.domain.dto.user.UserQueryRequest;
 import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.UserLoginVO;
 import com.zbc.domain.vo.UserVO;
+import com.zbc.enums.UserRoleEnum;
 import com.zbc.exception.BusinessException;
 import com.zbc.mapper.UserMapper;
 import com.zbc.service.UserService;
@@ -211,9 +212,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.eq(StrUtil.isNotBlank(userRole), "userRole", userRole);
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
+
+    }
+
+    /**
+     * 判断是否为管理员
+     */
+    @Override
+    public boolean isAdmin(User user) {
+        return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
     }
 }
-
-
-
-
