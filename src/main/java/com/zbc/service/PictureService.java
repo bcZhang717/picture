@@ -10,6 +10,8 @@ import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+
 
 public interface PictureService extends IService<Picture> {
     /**
@@ -36,7 +38,7 @@ public interface PictureService extends IService<Picture> {
      * @param picture 图片对象
      * @return 图片视图对象
      */
-    PictureVO getPictureVO(Picture picture);
+    PictureVO getPictureVO(Picture picture, HttpServletRequest request);
 
     /**
      * 获取分页图片列表
@@ -44,5 +46,12 @@ public interface PictureService extends IService<Picture> {
      * @param picturePage 图片分页对象
      * @return 图片视图分页对象
      */
-    Page<PictureVO> getPictureVOPage(Page<Picture> picturePage);
+    Page<PictureVO> getPictureVOPage(Page<Picture> picturePage, HttpServletRequest request);
+
+    /**
+     * 图片校验规则
+     *
+     * @param picture 图片对象
+     */
+    void validPicture(Picture picture);
 }

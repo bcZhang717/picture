@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +129,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
      * 单个图片封转
      */
     @Override
-    public PictureVO getPictureVO(Picture picture) {
+    public PictureVO getPictureVO(Picture picture, HttpServletRequest request) {
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         // 获取VO
         PictureVO pictureVO = PictureVO.objectToVO(picture);
@@ -146,7 +147,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
      * 分页获取图片封装
      */
     @Override
-    public Page<PictureVO> getPictureVOPage(Page<Picture> picturePage) {
+    public Page<PictureVO> getPictureVOPage(Page<Picture> picturePage, HttpServletRequest request) {
         List<Picture> pictureList = picturePage.getRecords();
         Page<PictureVO> pictureVOPage = new Page<>(picturePage.getCurrent(), picturePage.getSize(), picturePage.getTotal());
         if (CollUtil.isEmpty(pictureList)) {
@@ -170,6 +171,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         pictureVOPage.setRecords(pictureVOList);
         return pictureVOPage;
     }
+
+    @Override
+    public void validPicture(Picture picture) {
+        ThrowUtils.throwIf(picture == null, ErrorCode.PARAMS_ERROR);
+        // 从对象中取值
+        Long id = picture.getId();
+        String url = picture.getUrl();
+        String introduction = picture.getIntroduction();
+        // 修改数据时，id 不能为空，有参数则校验
+        ThrowUtils.throwIf(ObjUtil.isNull(id), ErrorCode.PARAMS_ERROR, "id 不能为空");
+        if (StrUtil.isNotBlank(url)) {
+            ThrowUtils.throwIf(url.length() > 1024, ErrorCode.PARAMS_ERROR, "url 过长");
+        }
+        if (StrUtil.isNotBlank(introduction)) {
+            ThrowUtils.throwIf(introduction.length() > 800, ErrorCode.PARAMS_ERROR, "简介过长");
+        }
+    }
+
 
 }
 
