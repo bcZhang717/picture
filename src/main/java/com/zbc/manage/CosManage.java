@@ -23,7 +23,7 @@ public class CosManage {
     /**
      * 文件上传
      *
-     * @param key  唯一键
+     * @param key  唯一键,简单理解为文件路径
      * @param file 文件
      */
     public PutObjectResult putObject(String key, File file) {
@@ -37,10 +37,11 @@ public class CosManage {
     /**
      * 下载文件到本地
      *
-     * @param key 唯一键
+     * @param key 唯一键,简单理解为文件路径
      */
     public COSObject getObject(String key) {
-        GetObjectRequest getObjectRequest = new GetObjectRequest(cosClientConfig.getBucket(), key);
+        String bucketName = cosClientConfig.getBucket();
+        GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, key);
         return cosClient.getObject(getObjectRequest);
     }
 
