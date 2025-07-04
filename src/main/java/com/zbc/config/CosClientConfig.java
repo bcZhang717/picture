@@ -43,8 +43,11 @@ public class CosClientConfig {
     @Bean
     public COSClient cosClient() {
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
+        // 设置bucket的地域
         ClientConfig clientConfig = new ClientConfig(new Region(region));
+        // 设置使用https(5.6.54版本之后默认是https)
         clientConfig.setHttpProtocol(HttpProtocol.https);
+        // 生成cosClient客户端
         return new COSClient(cred, clientConfig);
     }
 }

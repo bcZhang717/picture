@@ -6,7 +6,7 @@ create table if not exists picture
     name         varchar(128)                       not null comment '图片名称',
     introduction varchar(512)                       null comment '简介',
     category     varchar(64)                        null comment '分类',
-    tags         varchar(512)                      null comment '标签（JSON 数组）',
+    tags varchar(512) null comment '标签（JSON 数组）',
     picSize      bigint                             null comment '图片体积',
     picWidth     int                                null comment '图片宽度',
     picHeight    int                                null comment '图片高度',
@@ -22,4 +22,14 @@ create table if not exists picture
     INDEX idx_category (category),         -- 提升基于分类的查询性能
     INDEX idx_tags (tags),                 -- 提升基于标签的查询性能
     INDEX idx_userId (userId)              -- 提升基于用户 ID 的查询性能
-    ) comment '图片' collate = utf8mb4_unicode_ci;
+) comment '图片' collate = utf8mb4_unicode_ci;
+
+alter table picture
+    -- 添加新列
+    add column reviewStatus  int default 0 not null comment '审核状态：0-待审核; 1-通过; 2-拒绝',
+    add column reviewMessage varchar(512)  null comment '审核信息',
+    add column reviewerId    bigint        null comment '审核人 ID',
+    add column reviewTime    datetime      null comment '审核时间';
+
+-- 创建基于 reviewStatus 列的索引
+create index idx_reviewStatus on picture (reviewStatus);

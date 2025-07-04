@@ -3,6 +3,7 @@ package com.zbc.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zbc.domain.dto.picture.PictureQueryRequest;
+import com.zbc.domain.dto.picture.PictureReviewRequest;
 import com.zbc.domain.dto.picture.PictureUploadRequest;
 import com.zbc.domain.pojo.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -54,4 +55,20 @@ public interface PictureService extends IService<Picture> {
      * @param picture 图片对象
      */
     void validPicture(Picture picture);
+
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest 图片审核参数
+     * @param loginUser            当前登录用户
+     */
+    void pictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 补充审核参数
+     *
+     * @param picture   图片对象
+     * @param loginUser 当前登录用户
+     */
+    void fillReviewParams(Picture picture, User loginUser);
 }
