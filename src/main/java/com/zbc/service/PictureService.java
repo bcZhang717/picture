@@ -2,14 +2,14 @@ package com.zbc.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.zbc.domain.dto.picture.PictureQueryRequest;
 import com.zbc.domain.dto.picture.PictureReviewRequest;
+import com.zbc.domain.dto.picture.PictureUploadByBatchRequest;
 import com.zbc.domain.dto.picture.PictureUploadRequest;
 import com.zbc.domain.pojo.Picture;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.PictureVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -18,12 +18,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile 文件
+     * @param inputSource   文件输入源
      * @param uploadRequest 上传参数
      * @param loginUser     当前登录用户
      * @return 图片视图对象
      */
-    PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest uploadRequest, User loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest uploadRequest, User loginUser);
 
     /**
      * 获取查询条件
@@ -71,4 +71,13 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser 当前登录用户
      */
     void fillReviewParams(Picture picture, User loginUser);
+
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param byBatchRequest 图片批量上传参数
+     * @param loginUser      当前登录用户
+     * @return 陈工创建的图片数量
+     */
+    Integer uploadPictureByBatch(PictureUploadByBatchRequest byBatchRequest, User loginUser);
 }

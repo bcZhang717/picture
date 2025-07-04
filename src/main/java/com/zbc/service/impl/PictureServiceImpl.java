@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zbc.domain.dto.file.UploadPictureResult;
 import com.zbc.domain.dto.picture.PictureQueryRequest;
 import com.zbc.domain.dto.picture.PictureReviewRequest;
+import com.zbc.domain.dto.picture.PictureUploadByBatchRequest;
 import com.zbc.domain.dto.picture.PictureUploadRequest;
 import com.zbc.domain.pojo.Picture;
 import com.zbc.domain.pojo.User;
@@ -19,15 +20,23 @@ import com.zbc.enums.PictureReviewStatusEnum;
 import com.zbc.exception.BusinessException;
 import com.zbc.exception.ErrorCode;
 import com.zbc.manage.FileManage;
+import com.zbc.manage.upload.FilePictureUpload;
+import com.zbc.manage.upload.PictureUploadTemplate;
+import com.zbc.manage.upload.UrlPictureUpload;
 import com.zbc.mapper.PictureMapper;
 import com.zbc.service.PictureService;
 import com.zbc.service.UserService;
 import com.zbc.utils.ThrowUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -36,17 +45,22 @@ import java.util.stream.Collectors;
 
 
 @Service
+@Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> implements PictureService {
     @Resource
     FileManage fileManage;
     @Resource
     private UserService userService;
+    @Resource
+    private FilePictureUpload filePictureUpload;
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
 
     /**
      * 图片上传
      */
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest uploadRequest, User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest uploadRequest, User loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         Long pictureId = null;
         if (uploadRequest != null) {
@@ -66,7 +80,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         // 上传图片
         String uploadPathPrefix = String.format("picture/%s", loginUser.getId()); // 以用户id划分文件夹
-        UploadPictureResult uploadPictureResult = fileManage.uploadPicture(multipartFile, uploadPathPrefix);
+        PictureUploadTemplate template = filePictureUpload;
+        if (inputSource instanceof String) {
+            template = urlPictureUpload;
+        }
+        UploadPictureResult uploadPictureResult = template.uploadPicture(inputSource, uploadPathPrefix);
         // 属性拷贝
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
@@ -252,7 +270,59 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
     }
 
-
+    /**
+     * 批量抓取和创建图片
+     */
+    @Override
+    public Integer uploadPictureByBatch(PictureUploadByBatchRequest byBatchRequest, User loginUser) {
+        ThrowUtils.throwIf(byBatchRequest.getCount() > 30, ErrorCode.PARAMS_ERROR, "最多抓取30条");
+        // 拼接爬取路径
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", byBatchRequest.getSearchText());
+        Document document = null;
+        try {
+            document = Jsoup.connect(fetchUrl).get();
+        } catch (IOException e) {
+            log.error("获取页面失败", e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取页面失败");
+        }
+        // 成功,解析内容
+        Element div = document.getElementsByClass("dgContrl").first();
+        if (ObjUtil.isEmpty(div)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取图片失败");
+        }
+        // List
+        Elements imgList = div.select("img.ming");
+        // 遍历结果,依次处理
+        int count = 0;
+        for (Element ele : imgList) {
+            String fileUrl = ele.attr("src");
+            if (StrUtil.isBlank(fileUrl)) {
+                log.error("图片地址为空, 跳过: {}", fileUrl);
+                continue;
+            }
+            // 处理图片地址,防止转义或COS冲突
+            // https://www.baidu.com?a=1&b=2(去掉问号后的内容,包括问号)
+            int index = fileUrl.indexOf("?");
+            if (index > -1) {
+                fileUrl = fileUrl.substring(0, index);
+            }
+            PictureUploadRequest request = new PictureUploadRequest();
+            request.setFileUrl(fileUrl);
+            // 上传图片
+            try {
+                PictureVO pictureVO = this.uploadPicture(fileUrl, request, loginUser);
+                log.info("上传图片成功: {}", pictureVO);
+                count++;
+            } catch (Exception e) {
+                log.error("上传图片失败: {}", e.getMessage());
+                continue;
+            }
+            if (count >= byBatchRequest.getCount()) {
+                break;
+            }
+        }
+        return count;
+    }
 }
 
 
