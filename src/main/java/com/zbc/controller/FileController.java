@@ -19,6 +19,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * 测试通用文件上传和下载的接口
+ */
 @RestController
 @RequestMapping("/file")
 @Slf4j
@@ -27,28 +30,32 @@ public class FileController {
     private CosManage cosManage;
 
     /**
-     * 测试文件上传
+     * 测试文件上传接口(CosManage)
      *
-     * @param multipartFile
-     * @return
+     * @param multipartFile 要上传的文件
+     * @return 文件路径
      */
     @PostMapping("/test/upload")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<String> uploadFile(@RequestPart("file") MultipartFile multipartFile) {
-        // 获取文件名
+        // 获取原始文件名
         String filename = multipartFile.getOriginalFilename();
-        // 拼接文件路径
+        // 拼接文件路径(构造文件夹)
         String filePath = String.format("/test/%s", filename);
         File file = null;
         try {
+            // 创建临时文件, 文件前缀是filePath,后缀默认是.tmp
             file = File.createTempFile(filePath, null);
+            // 将上传的文件保存到服务器指定的位置,要求参数默认不存在才创建
             multipartFile.transferTo(file);
+            // 上传文件到COS
             cosManage.putObject(filePath, file);
             return ResultUtils.success(filePath);
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         } finally {
             if (file != null) {
+                // 删除临时文件
                 boolean deleted = file.delete();
                 if (!deleted) {
                     log.error("文件删除失败: {}", filePath);

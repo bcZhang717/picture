@@ -1,10 +1,7 @@
 package com.zbc.manage;
 
 import com.qcloud.cos.COSClient;
-import com.qcloud.cos.model.COSObject;
-import com.qcloud.cos.model.GetObjectRequest;
-import com.qcloud.cos.model.PutObjectRequest;
-import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.*;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
 import com.zbc.config.CosClientConfig;
 import org.springframework.stereotype.Component;
@@ -12,6 +9,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.File;
 
+/**
+ * 通用的文件上传与下载
+ */
 @Component
 public class CosManage {
 
@@ -21,18 +21,21 @@ public class CosManage {
     private COSClient cosClient;
 
     /**
-     * 上传对象
+     * 文件上传
      *
      * @param key  唯一键
      * @param file 文件
      */
     public PutObjectResult putObject(String key, File file) {
-        PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key, file);
+        String bucketName = cosClientConfig.getBucket();
+        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, key, file);
+        // 设置存储类型为标准(默认)
+        putObjectRequest.setStorageClass(StorageClass.Standard);
         return cosClient.putObject(putObjectRequest);
     }
 
     /**
-     * 下载对象
+     * 下载文件到本地
      *
      * @param key 唯一键
      */

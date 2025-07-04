@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -88,7 +89,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 属性拷贝
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
-        picture.setName(uploadPictureResult.getPicName());
+        String picName = uploadPictureResult.getPicName();
+        // 支持从外部传入图片名称
+        if (uploadRequest != null && StrUtil.isNotBlank(uploadPictureResult.getPicName())) {
+            picName = uploadPictureResult.getPicName();
+        }
+        picture.setName(picName);
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
@@ -286,16 +292,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取页面失败");
         }
         // 成功,解析内容
-        Element div = document.getElementsByClass("dgContrl").first();
+        Element div = document.getElementsByClass("dgControl").first();
         if (ObjUtil.isEmpty(div)) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取图片失败");
         }
         // List
-        Elements imgList = div.select("img.ming");
+        Elements imgList = div.select(".iusc");
         // 遍历结果,依次处理
         int count = 0;
         for (Element ele : imgList) {
-            String fileUrl = ele.attr("src");
+            String fileUrl = ele.attr("m");
+            JSONObject mObj = new  JSONObject(fileUrl);
+            fileUrl = mObj.get("murl").toString();
             if (StrUtil.isBlank(fileUrl)) {
                 log.error("图片地址为空, 跳过: {}", fileUrl);
                 continue;
@@ -308,6 +316,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             }
             PictureUploadRequest request = new PictureUploadRequest();
             request.setFileUrl(fileUrl);
+            String namePrefix = byBatchRequest.getNamePrefix();
+            if (StrUtil.isBlank(namePrefix)) {
+                // 默认使用搜索词
+                namePrefix = byBatchRequest.getSearchText();
+            }
+            request.setPicName(namePrefix + (count + 1));
             // 上传图片
             try {
                 PictureVO pictureVO = this.uploadPicture(fileUrl, request, loginUser);
