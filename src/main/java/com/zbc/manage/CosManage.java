@@ -46,16 +46,18 @@ public class CosManage {
     }
 
     /**
-     * 上传对象（附带图片信息）
+     * 上传并解析图片
+     * 数据万象: 图片处理
      *
-     * @param key  唯一键
+     * @param key  唯一键,简单理解为文件路径
      * @param file 文件
      */
     public PutObjectResult putPictureObject(String key, File file) {
-        PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key, file);
-        // 对图片进行处理（获取基本信息也被视作为一种处理）
+        String bucketName = cosClientConfig.getBucket();
+        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, key, file);
+        // 对图片进行处理(获取基本信息也被视作为一种处理)
         PicOperations picOperations = new PicOperations();
-        // 1 表示返回原图信息
+        // 1: 返回原图信息; 0: 不返回原图信息(默认)
         picOperations.setIsPicInfo(1);
         // 构造处理参数
         putObjectRequest.setPicOperations(picOperations);

@@ -37,22 +37,32 @@ public class PictureController {
     private PictureService pictureService;
 
     /**
-     * 文件上传
+     * 文件上传(本地上传)
      *
-     * @param multipartFile
-     * @param uploadRequest
-     * @param request
-     * @return
+     * @param multipartFile 要上传的文件
+     * @param uploadRequest 上传参数DTO
+     * @param request       获取当前登录用户
+     * @return PictureVO
      */
-    @PostMapping("/upload/url")
+    @PostMapping("/upload")
     public BaseResponse<PictureVO> uploadPicture(@RequestPart("file") MultipartFile multipartFile, PictureUploadRequest uploadRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(multipartFile == null, ErrorCode.PARAMS_ERROR);
+        // 获取当前登录用户
         User currentUser = userService.getCurrentUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, uploadRequest, currentUser);
         return ResultUtils.success(pictureVO);
     }
 
-    @PostMapping("/upload")
+    /**
+     * 文件上传(url上传)
+     *
+     * @param uploadRequest 上传参数DTO
+     * @param request       获取当前登录用户
+     * @return PictureVO
+     */
+    @PostMapping("/upload/url")
     public BaseResponse<PictureVO> uploadPictureByUrl(@RequestBody PictureUploadRequest uploadRequest, HttpServletRequest request) {
+        // 获取当前登录用户
         User currentUser = userService.getCurrentUser(request);
         String fileUrl = uploadRequest.getFileUrl();
         PictureVO pictureVO = pictureService.uploadPicture(fileUrl, uploadRequest, currentUser);
@@ -61,6 +71,10 @@ public class PictureController {
 
     /**
      * 删除图片
+     *
+     * @param deleteRequest id
+     * @param request       获取当前登录用户
+     * @return 是否删除成功
      */
     @PostMapping("/delete")
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
@@ -83,7 +97,11 @@ public class PictureController {
     }
 
     /**
-     * 更新图片（仅管理员可用）
+     * 更新图片(管理员)
+     *
+     * @param pictureUpdateRequest 图片基本信息封装
+     * @param request              获取当前登录用户
+     * @return 是否更新成功
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -111,7 +129,7 @@ public class PictureController {
     }
 
     /**
-     * 根据 id 获取图片（仅管理员可用）
+     * 根据 id 获取图片(管理员)
      */
     @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -125,7 +143,7 @@ public class PictureController {
     }
 
     /**
-     * 根据 id 获取图片（封装类）
+     * 根据 id 获取图片(用户)
      */
     @GetMapping("/get/vo")
     public BaseResponse<PictureVO> getPictureVOById(long id, HttpServletRequest request) {
@@ -134,11 +152,12 @@ public class PictureController {
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         // 获取封装类
-        return ResultUtils.success(pictureService.getPictureVO(picture, request));
+        PictureVO pictureVO = pictureService.getPictureVO(picture, request);
+        return ResultUtils.success(pictureVO);
     }
 
     /**
-     * 分页获取图片列表（仅管理员可用）
+     * 分页获取图片列表(管理员)
      */
     @PostMapping("/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -146,17 +165,15 @@ public class PictureController {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
         // 查询数据库
-        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-                pictureService.getQueryWrapper(pictureQueryRequest));
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size), pictureService.getQueryWrapper(pictureQueryRequest));
         return ResultUtils.success(picturePage);
     }
 
     /**
-     * 分页获取图片列表（封装类）
+     * 分页获取图片列表(用户)
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
-                                                             HttpServletRequest request) {
+    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
@@ -164,14 +181,14 @@ public class PictureController {
         // 普通用户默认只能看到审核通过的数据
         pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         // 查询数据库
-        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-                pictureService.getQueryWrapper(pictureQueryRequest));
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size), pictureService.getQueryWrapper(pictureQueryRequest));
         // 获取封装类
-        return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+        return ResultUtils.success(pictureVOPage);
     }
 
     /**
-     * 编辑图片（给用户使用）
+     * 编辑图片(用户)
      */
     @PostMapping("/edit")
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest, HttpServletRequest request) {
@@ -204,6 +221,11 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    /**
+     * 获取预制标签和分类
+     *
+     * @return 预制标签和分类
+     */
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
@@ -215,7 +237,7 @@ public class PictureController {
     }
 
     /**
-     * 图片审核
+     * 图片审核(admin)
      *
      * @param pictureReviewRequest DTO
      * @param request              当前登录用户

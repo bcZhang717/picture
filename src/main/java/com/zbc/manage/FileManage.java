@@ -28,6 +28,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 贴合业务的文件处理类
+ */
 @Component
 @Slf4j
 @Deprecated
@@ -39,19 +42,19 @@ public class FileManage {
     private CosManage cosManage;
 
     /**
-     * 上传图片
+     * 上传图片(本地上传)
      *
-     * @param multipartFile    文件
+     * @param multipartFile    上传的图片
      * @param uploadPathPrefix 上传图片前缀(用户指定)
-     * @return 上传图片结果
+     * @return 图片基本信息, 用于解析图片结果
      */
     public UploadPictureResult uploadPicture(MultipartFile multipartFile, String uploadPathPrefix) {
         // 1. 校验图片
         validPicture(multipartFile);
-        // 2. 拼接文件路径
+        // 2. 拼接文件路径(date_uuid.suffix)
         String uuid = RandomUtil.randomString(10); // 随机生成一个10位字符串
         String date = DateUtil.formatDate(new Date()); // 获取当前日期
-        String originalFilename = multipartFile.getOriginalFilename(); // 原始文件
+        String originalFilename = multipartFile.getOriginalFilename(); // 原始文件名
         String suffix = FileUtil.getSuffix(originalFilename); // 原始文件后缀
         // 最终拼接文件路径: 日期_uuid.文件后缀
         String uploadFileName = String.format("%s_%s.%s", date, uuid, suffix);
@@ -60,57 +63,57 @@ public class FileManage {
         // 4. 删除临时文件
         File file = null;
         try {
-            // 创建临时文件
+            // 创建临时文件, uploadPath为前缀
             file = File.createTempFile(uploadPath, null);
             multipartFile.transferTo(file);
-            // 上传文件
+            // 上传文件到COS
             PutObjectResult putObjectResult = cosManage.putPictureObject(uploadPath, file);
-            // 获取图片信息
+            // 通过数据万象获取图片信息
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
-            String format = imageInfo.getFormat();
             int width = imageInfo.getWidth();
             int height = imageInfo.getHeight();
             // 封装返回结果
             UploadPictureResult uploadPictureResult = new UploadPictureResult();
             uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
-            uploadPictureResult.setPicName(FileUtil.getName(originalFilename));
+            uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
             uploadPictureResult.setPicSize(FileUtil.size(file));
             uploadPictureResult.setPicWidth(width);
             uploadPictureResult.setPicHeight(height);
+            uploadPictureResult.setPicFormat(imageInfo.getFormat());
             // 计算宽高比
             double scale = NumberUtil.round(width * 1.0 / height, 2).doubleValue();
             uploadPictureResult.setPicScale(scale);
-            uploadPictureResult.setPicFormat(imageInfo.getFormat());
             return uploadPictureResult;
         } catch (Exception e) {
             log.error("文件上传失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         } finally {
+            // 删除临时文件
             deleteTempFile(file);
         }
-
     }
 
     /**
-     * 校验图片
+     * 校验图片(本地上传)
      *
-     * @param multipartFile 文件
+     * @param multipartFile 上传的文件
      */
     private void validPicture(MultipartFile multipartFile) {
         ThrowUtils.throwIf(multipartFile == null, ErrorCode.PARAMS_ERROR, "文件不能为空");
-        // 文件大小
+        // 1. 获取文件大小
         long fileSize = multipartFile.getSize();
-        // 指定文件大小限制
+        // 2. 指定文件大小限制
         final long ONE_M = 1024 * 1024;
         ThrowUtils.throwIf(fileSize > 2 * ONE_M, ErrorCode.PARAMS_ERROR, "文件大小不能超过2M");
-        // 指定文件后缀限制
+        // 3. 获取文件后缀
         String fileSuffix = FileUtil.getSuffix(multipartFile.getOriginalFilename());
+        // 允许的文件类型
         final List<String> ALLOW_FORMAT_LIST = Arrays.asList("jpg", "jpeg", "png", "webp");
         ThrowUtils.throwIf(!ALLOW_FORMAT_LIST.contains(fileSuffix), ErrorCode.PARAMS_ERROR, "文件类型错误");
     }
 
     /**
-     * 删除临时文件
+     * 删除临时文件(本地上传、url上传)
      *
      * @param file 文件
      */
@@ -125,9 +128,9 @@ public class FileManage {
     }
 
     /**
-     * 上传图片-url
+     * 上传图片(url上传)
      *
-     * @param fileUrl          文件url
+     * @param fileUrl          要上传的文件url
      * @param uploadPathPrefix 上传图片前缀(用户指定)
      * @return 上传图片结果
      */
@@ -180,7 +183,7 @@ public class FileManage {
     }
 
     /**
-     * 校验图片url
+     * 校验图片(url上传)
      *
      * @param fileUrl 图片url
      */
@@ -194,12 +197,13 @@ public class FileManage {
         }
         // 2. 验证url协议
         ThrowUtils.throwIf(!fileUrl.startsWith("http://") && !fileUrl.startsWith("https://"), ErrorCode.PARAMS_ERROR, "文件地址格式不支持");
-        // 3. 验证url是否存在
+        // 3. 验证url是否存在(head请求)
         HttpResponse response = null;
         try {
             response = HttpUtil.createRequest(Method.HEAD, fileUrl).execute();
+            // 不支持head请求
             if (response.getStatus() != HttpStatus.HTTP_OK) {
-                return; // 不支持head请求
+                return;
             }
             // 4. 验证文件的类型
             String contentType = response.header("Content-Type");

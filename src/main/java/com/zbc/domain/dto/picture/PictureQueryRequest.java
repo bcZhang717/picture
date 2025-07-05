@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 图片查询请求
+ * 分页查询图片DTO
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -41,7 +41,7 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
     private List<String> tags;
 
     /**
-     * 文件体积
+     * 图片大小
      */
     private Long picSize;
 
@@ -66,7 +66,7 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
     private String picFormat;
 
     /**
-     * 搜索词（同时搜名称、简介等）
+     * 搜索词(同时搜名称、简介等)
      */
     private String searchText;
 

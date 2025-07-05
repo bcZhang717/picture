@@ -4,11 +4,14 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 图片上传DTO
+ */
 @Data
 public class PictureUploadRequest implements Serializable {
 
     /**
-     * 图片 id（用于修改）
+     * 图片 id(用于修改)
      */
     private Long id;
 

@@ -2,6 +2,9 @@ package com.zbc.domain.dto.file;
 
 import lombok.Data;
 
+/**
+ * 图片基本信息, 用于解析图片结果
+ */
 @Data
 public class UploadPictureResult {
 
@@ -16,7 +19,7 @@ public class UploadPictureResult {
     private String picName;
 
     /**
-     * 文件体积
+     * 图片体积
      */
     private Long picSize;
 

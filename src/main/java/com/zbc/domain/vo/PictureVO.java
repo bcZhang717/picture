@@ -33,7 +33,7 @@ public class PictureVO implements Serializable {
     private String introduction;
 
     /**
-     * 标签
+     * 标签(注意类型, 与数据库字段类型不一致, 需要特别处理)
      */
     private List<String> tags;
 
@@ -88,14 +88,14 @@ public class PictureVO implements Serializable {
     private Date updateTime;
 
     /**
-     * 创建用户信息
+     * 创建用户信息(非数据库字段)
      */
     private UserVO user;
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 封装类转对象
+     * VO类转实体类
      */
     public static Picture VOtoObject(PictureVO pictureVO) {
         if (pictureVO == null) {
@@ -110,7 +110,7 @@ public class PictureVO implements Serializable {
     }
 
     /**
-     * 对象转封装类
+     * 实体类转VO类
      */
     public static PictureVO objectToVO(Picture picture) {
         if (picture == null) {
@@ -123,5 +123,4 @@ public class PictureVO implements Serializable {
         pictureVO.setTags(list);
         return pictureVO;
     }
-
 }

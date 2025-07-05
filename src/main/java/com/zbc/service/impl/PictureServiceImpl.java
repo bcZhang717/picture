@@ -112,6 +112,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         return PictureVO.objectToVO(picture);
     }
 
+    /**
+     * 构造查询条件
+     */
     @Override
     public QueryWrapper<Picture> getQueryWrapper(PictureQueryRequest pictureQueryRequest) {
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
@@ -139,12 +142,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 从多字段中搜索
         if (StrUtil.isNotBlank(searchText)) {
             // 需要拼接查询条件
+            // where (name like '%searchText%' or introduction like '%searchText%') and isDelete = 0;
             queryWrapper.and(qw -> qw.like("name", searchText)
                     .or()
                     .like("introduction", searchText)
             );
         }
-
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
@@ -198,12 +201,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         if (CollUtil.isEmpty(pictureList)) {
             return pictureVOPage;
         }
-        // 对象列表 => 封装对象列表
+        // pictureList => pictureVOList
         List<PictureVO> pictureVOList = pictureList.stream().map(PictureVO::objectToVO).collect(Collectors.toList());
         // 1. 关联查询用户信息
         Set<Long> userIdSet = pictureList.stream().map(Picture::getUserId).collect(Collectors.toSet());
-        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
-                .collect(Collectors.groupingBy(User::getId));
+        List<User> users = userService.listByIds(userIdSet);
+        Map<Long, List<User>> userIdUserListMap = users.stream().collect(Collectors.groupingBy(User::getId));
         // 2. 填充信息
         pictureVOList.forEach(pictureVO -> {
             Long userId = pictureVO.getUserId();
@@ -211,12 +214,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             if (userIdUserListMap.containsKey(userId)) {
                 user = userIdUserListMap.get(userId).get(0);
             }
-            pictureVO.setUser(userService.getUserVO(user));
+            UserVO userVO = userService.getUserVO(user);
+            pictureVO.setUser(userVO);
         });
         pictureVOPage.setRecords(pictureVOList);
         return pictureVOPage;
     }
 
+    /**
+     * 图片校验规则
+     */
     @Override
     public void validPicture(Picture picture) {
         ThrowUtils.throwIf(picture == null, ErrorCode.PARAMS_ERROR);
@@ -234,17 +241,20 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
     }
 
+    /**
+     * 图片审核
+     */
     @Override
     public void pictureReview(PictureReviewRequest pictureReviewRequest, User loginUser) {
         // 1. 校验参数
         ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
-        // 2. 判断图片是否存在
         Long id = pictureReviewRequest.getId();
         Integer reviewStatus = pictureReviewRequest.getReviewStatus();
         PictureReviewStatusEnum pictureReviewStatusEnum = PictureReviewStatusEnum.getEnumByValue(reviewStatus);
         if (id == null || pictureReviewStatusEnum == null || PictureReviewStatusEnum.REVIEWING.equals(pictureReviewStatusEnum)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        // 2. 判断图片是否存在
         Picture picture = this.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         // 3. 检查审核状态是否重复
@@ -260,6 +270,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         ThrowUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR);
     }
 
+    /**
+     * 审核参数
+     */
     @Override
     public void fillReviewParams(Picture picture, User loginUser) {
         ThrowUtils.throwIf(picture == null, ErrorCode.PARAMS_ERROR);
@@ -302,7 +315,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         int count = 0;
         for (Element ele : imgList) {
             String fileUrl = ele.attr("m");
-            JSONObject mObj = new  JSONObject(fileUrl);
+            JSONObject mObj = new JSONObject(fileUrl);
             fileUrl = mObj.get("murl").toString();
             if (StrUtil.isBlank(fileUrl)) {
                 log.error("图片地址为空, 跳过: {}", fileUrl);

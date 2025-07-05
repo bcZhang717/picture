@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 图片修改请求
+ * 图片修改DTO
  */
 @Data
 public class PictureEditRequest implements Serializable {
