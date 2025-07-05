@@ -14,18 +14,6 @@ import java.util.List;
 @Service
 public class FilePictureUpload extends PictureUploadTemplate {
     @Override
-    protected String getOriginalFilename(Object inputSource) {
-        MultipartFile multipartFile = (MultipartFile) inputSource;
-        return multipartFile.getOriginalFilename(); // 原始文件
-    }
-
-    @Override
-    protected void processFile(Object inputSource, File file) throws IOException {
-        MultipartFile multipartFile = (MultipartFile) inputSource;
-        multipartFile.transferTo(file);
-    }
-
-    @Override
     protected void validPicture(Object inputSource) {
         MultipartFile multipartFile = (MultipartFile) inputSource;
         ThrowUtils.throwIf(multipartFile == null, ErrorCode.PARAMS_ERROR, "文件不能为空");
@@ -39,4 +27,17 @@ public class FilePictureUpload extends PictureUploadTemplate {
         final List<String> ALLOW_FORMAT_LIST = Arrays.asList("jpg", "jpeg", "png", "webp");
         ThrowUtils.throwIf(!ALLOW_FORMAT_LIST.contains(fileSuffix), ErrorCode.PARAMS_ERROR, "文件类型错误");
     }
+
+    @Override
+    protected String getOriginalFilename(Object inputSource) {
+        MultipartFile multipartFile = (MultipartFile) inputSource;
+        return multipartFile.getOriginalFilename(); // 原始文件
+    }
+
+    @Override
+    protected void processFile(Object inputSource, File file) throws IOException {
+        MultipartFile multipartFile = (MultipartFile) inputSource;
+        multipartFile.transferTo(file);
+    }
+
 }

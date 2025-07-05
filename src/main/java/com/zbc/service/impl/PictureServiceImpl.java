@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -63,6 +64,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest uploadRequest, User loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        ThrowUtils.throwIf(uploadRequest == null && inputSource == null, ErrorCode.PARAMS_ERROR, "图片为空");
         Long pictureId = null;
         if (uploadRequest != null) {
             pictureId = uploadRequest.getId();
@@ -81,6 +83,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         // 上传图片
         String uploadPathPrefix = String.format("picture/%s", loginUser.getId()); // 以用户id划分文件夹
+        // 根据inputSource选择上传模板
         PictureUploadTemplate template = filePictureUpload;
         if (inputSource instanceof String) {
             template = urlPictureUpload;
@@ -91,8 +94,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         picture.setUrl(uploadPictureResult.getUrl());
         String picName = uploadPictureResult.getPicName();
         // 支持从外部传入图片名称
-        if (uploadRequest != null && StrUtil.isNotBlank(uploadPictureResult.getPicName())) {
-            picName = uploadPictureResult.getPicName();
+        if (uploadRequest != null && StrUtil.isNotBlank(uploadRequest.getPicName())) {
+            picName = uploadRequest.getPicName();
         }
         picture.setName(picName);
         picture.setPicSize(uploadPictureResult.getPicSize());
@@ -299,6 +302,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", byBatchRequest.getSearchText());
         Document document = null;
         try {
+            // 建立连接
             document = Jsoup.connect(fetchUrl).get();
         } catch (IOException e) {
             log.error("获取页面失败", e);
@@ -306,7 +310,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
         // 成功,解析内容
         Element div = document.getElementsByClass("dgControl").first();
-        if (ObjUtil.isEmpty(div)) {
+        if (ObjUtil.isNull(div)) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取图片失败");
         }
         // List
@@ -315,8 +319,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         int count = 0;
         for (Element ele : imgList) {
             String fileUrl = ele.attr("m");
-            JSONObject mObj = new JSONObject(fileUrl);
-            fileUrl = mObj.get("murl").toString();
+            JSONObject obj = JSONUtil.parseObj(fileUrl);
+            fileUrl = obj.getStr("murl");
             if (StrUtil.isBlank(fileUrl)) {
                 log.error("图片地址为空, 跳过: {}", fileUrl);
                 continue;
@@ -327,14 +331,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             if (index > -1) {
                 fileUrl = fileUrl.substring(0, index);
             }
-            PictureUploadRequest request = new PictureUploadRequest();
-            request.setFileUrl(fileUrl);
             String namePrefix = byBatchRequest.getNamePrefix();
             if (StrUtil.isBlank(namePrefix)) {
                 // 默认使用搜索词
                 namePrefix = byBatchRequest.getSearchText();
             }
-            request.setPicName(namePrefix + (count + 1));
+            PictureUploadRequest request = new PictureUploadRequest();
+            request.setFileUrl(fileUrl);
+            if (StrUtil.isNotBlank(namePrefix)) {
+                request.setPicName(namePrefix + (count + 1));
+            }
             // 上传图片
             try {
                 PictureVO pictureVO = this.uploadPicture(fileUrl, request, loginUser);

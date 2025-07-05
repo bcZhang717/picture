@@ -39,16 +39,16 @@ public abstract class PictureUploadTemplate {
      */
     public UploadPictureResult uploadPicture(Object inputSource, String uploadPathPrefix) {
         // 1. 校验图片
-        // TODO
+        // TODO: 不同
         validPicture(inputSource);
         // 2. 图片上传地址(拼接文件路径)
         String uuid = RandomUtil.randomString(10); // 随机生成一个10位字符串
         String date = DateUtil.formatDate(new Date()); // 获取当前日期
-        // TODO
+        // TODO: 不同
         String originalFilename = getOriginalFilename(inputSource); // 原始文件
         String suffix = FileUtil.getSuffix(originalFilename); // 原始文件后缀
         // 最终拼接文件路径: 日期_uuid.文件后缀
-        StrUtil.blankToDefault(suffix, "jpg");
+        StrUtil.blankToDefault(suffix, "jpg"); // 如果url没有后缀表明文件类型, 默认为jpg
         String uploadFileName = String.format("%s_%s.%s", date, uuid, suffix);
         // 上传路径
         String uploadPath = String.format("/%s/%s", uploadPathPrefix, uploadFileName);
@@ -57,7 +57,7 @@ public abstract class PictureUploadTemplate {
             // 3. 创建临时文件, 获取文件到服务器
             file = File.createTempFile(uploadPath, null);
             // 处理文件来源
-            // TODO
+            // TODO: 不同
             processFile(inputSource, file);
             // 4. 上传文件到COS
             PutObjectResult putObjectResult = cosManage.putPictureObject(uploadPath, file);
@@ -74,6 +74,12 @@ public abstract class PictureUploadTemplate {
 
     }
 
+    /**
+     * 校验输入源
+     *
+     * @param inputSource 本地文件或url
+     */
+    protected abstract void validPicture(Object inputSource);
 
     /**
      * 获取输入源的原始文件名
@@ -90,12 +96,6 @@ public abstract class PictureUploadTemplate {
      */
     protected abstract void processFile(Object inputSource, File file) throws IOException;
 
-    /**
-     * 校验输入源
-     *
-     * @param inputSource 本地文件或url
-     */
-    protected abstract void validPicture(Object inputSource);
 
     /**
      * 封转返回结果
@@ -116,10 +116,10 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicSize(FileUtil.size(file));
         uploadPictureResult.setPicWidth(width);
         uploadPictureResult.setPicHeight(height);
+        uploadPictureResult.setPicFormat(imageInfo.getFormat());
         // 计算宽高比
         double scale = NumberUtil.round(width * 1.0 / height, 2).doubleValue();
         uploadPictureResult.setPicScale(scale);
-        uploadPictureResult.setPicFormat(imageInfo.getFormat());
         return uploadPictureResult;
     }
 

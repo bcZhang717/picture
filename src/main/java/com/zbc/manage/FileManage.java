@@ -113,7 +113,7 @@ public class FileManage {
     }
 
     /**
-     * 删除临时文件(本地上传、url上传)
+     * 删除临时文件(本地上传)
      *
      * @param file 文件
      */

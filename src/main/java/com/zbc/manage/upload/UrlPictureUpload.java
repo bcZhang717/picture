@@ -21,18 +21,6 @@ import java.util.List;
 @Service
 public class UrlPictureUpload extends PictureUploadTemplate {
     @Override
-    protected String getOriginalFilename(Object inputSource) {
-        String fileUrl = (String) inputSource;
-        return FileUtil.getName(fileUrl);
-    }
-
-    @Override
-    protected void processFile(Object inputSource, File file) throws IOException {
-        String fileUrl = (String) inputSource;
-        HttpUtil.downloadFile(fileUrl, file);
-    }
-
-    @Override
     protected void validPicture(Object inputSource) {
         String fileUrl = (String) inputSource;
         ThrowUtils.throwIf(fileUrl == null, ErrorCode.PARAMS_ERROR, "图片url不能为空");
@@ -79,4 +67,17 @@ public class UrlPictureUpload extends PictureUploadTemplate {
         }
 
     }
+
+    @Override
+    protected String getOriginalFilename(Object inputSource) {
+        String fileUrl = (String) inputSource;
+        return FileUtil.getName(fileUrl);
+    }
+
+    @Override
+    protected void processFile(Object inputSource, File file) throws IOException {
+        String fileUrl = (String) inputSource;
+        HttpUtil.downloadFile(fileUrl, file);
+    }
+
 }

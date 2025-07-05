@@ -1,5 +1,6 @@
 package com.zbc.controller;
 
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zbc.annotations.AuthCheck;
@@ -19,6 +20,8 @@ import com.zbc.service.UserService;
 import com.zbc.utils.ResultUtils;
 import com.zbc.utils.ThrowUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/picture")
@@ -35,6 +39,8 @@ public class PictureController {
     private UserService userService;
     @Resource
     private PictureService pictureService;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 文件上传(本地上传)
@@ -188,6 +194,41 @@ public class PictureController {
     }
 
     /**
+     * 分页获取图片列表(用户, 带缓存)
+     */
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // 普通用户默认只能看到审核通过的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 1. 先查询缓存, 缓存中没有再查询数据库
+        // 构造key
+        String str = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(str.getBytes());
+        final String key = "picture:listPictureVOByPage:" + hashKey;
+        // redis查询到的数据
+        String value = stringRedisTemplate.opsForValue().get(key);
+        if (value != null) {
+            // 缓存中存在数据, 直接返回
+            Page<PictureVO> page = JSONUtil.toBean(value, Page.class);
+            return ResultUtils.success(page);
+        }
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size), pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+        // 2. 查询数据库之后, 写入到redis
+        String jsonStr = JSONUtil.toJsonStr(pictureVOPage);
+        // 随机TTL为300-600秒
+        int timeout = 300 + RandomUtil.randomInt(0, 300);
+        stringRedisTemplate.opsForValue().set(key, jsonStr, timeout, TimeUnit.SECONDS);
+        return ResultUtils.success(pictureVOPage);
+    }
+
+    /**
      * 编辑图片(用户)
      */
     @PostMapping("/edit")
@@ -252,6 +293,13 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    /**
+     * 批量抓取图片
+     *
+     * @param byBatchRequest DTO
+     * @param request        当前登录用户
+     * @return 抓取数量
+     */
     @PostMapping("/upload/batch")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest byBatchRequest, HttpServletRequest request) {
