@@ -36,3 +36,10 @@ create index idx_reviewStatus on picture (reviewStatus);
 
 alter table picture
     add column thumbnailUrl varchar(512) null comment '缩略图Url';
+
+-- 添加新列
+alter table picture
+    add column spaceId bigint null comment '空间 id（为空表示公共空间）';
+
+-- 创建索引
+create index idx_spaceId on picture (spaceId);
