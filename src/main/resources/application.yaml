@@ -2,6 +2,9 @@ server:
   port: 8080
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 2592000
 spring:
   application:
     name: yun-picture
@@ -20,6 +23,9 @@ spring:
     password: 123456
     database: 0
     timeout: 5000
+  session:
+    store-type: redis
+    timeout: 2592000
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -34,12 +40,20 @@ mybatis-plus:
 knife4j:
   enable: true
   openapi:
-    title: "智能云图库接口文档"
+    title: 智能云图库接口文档title
     version: 1.0.0
     group:
       default:
         api-rule: package
         api-rule-resources:
           - com.zbc.controller
+    description: 智能云图库接口文档desc
+    concat: zbc张 # 作者
+    terms-of-service-url: https://www.jd.com # API 服务条款
+  setting:
+    enable-footer: false # 关闭默认footer
+    enable-footer-custom: true # 开启自定义footer
+    footer-custom-content: Zbc Service | Copyright © 2025-[我的 gitee](https://gitee.com/xiao-jinglong) # 自定义footer内容
+
 
 

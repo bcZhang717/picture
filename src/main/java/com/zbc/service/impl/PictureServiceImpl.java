@@ -21,6 +21,7 @@ import com.zbc.domain.vo.UserVO;
 import com.zbc.enums.PictureReviewStatusEnum;
 import com.zbc.exception.BusinessException;
 import com.zbc.exception.ErrorCode;
+import com.zbc.manage.CosManage;
 import com.zbc.manage.FileManage;
 import com.zbc.manage.upload.FilePictureUpload;
 import com.zbc.manage.upload.PictureUploadTemplate;
@@ -34,11 +35,13 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +60,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     private FilePictureUpload filePictureUpload;
     @Resource
     private UrlPictureUpload urlPictureUpload;
+    @Resource
+    private CosManage cosManage;
 
     /**
      * 图片上传
@@ -92,6 +97,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 属性拷贝
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         String picName = uploadPictureResult.getPicName();
         // 支持从外部传入图片名称
         if (uploadRequest != null && StrUtil.isNotBlank(uploadRequest.getPicName())) {
@@ -355,6 +361,34 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             }
         }
         return count;
+    }
+
+    /**
+     * 删除图片
+     */
+    @Async // 异步执行
+    @Override
+    public void deletePicture(Picture picture) {
+        // 1. 先查询图片是否被多次使用
+        String url = picture.getUrl();
+        Long count = this.lambdaQuery().eq(Picture::getUrl, url).count();
+        if (count > 1) {
+            // 2. 多次使用, 不清理
+            return;
+        }
+        try {
+            // 3. 否则清理图片(压缩图), 并删除缩略图
+            String urlPath = new URL(url).getPath();
+            cosManage.deleteObject(urlPath);
+            String thumbnailUrl = picture.getThumbnailUrl();
+            if (StrUtil.isNotBlank(thumbnailUrl)) {
+                String thumbnailUrlPath = new URL(thumbnailUrl).getPath();
+                cosManage.deleteObject(thumbnailUrlPath);
+            }
+        } catch (Exception e) {
+            log.error("删除图片失败: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
     }
 }
 
