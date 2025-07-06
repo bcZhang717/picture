@@ -229,6 +229,7 @@ public class PictureController {
     /**
      * 分页获取图片列表(用户, 带redis缓存)
      */
+    @Deprecated
     @PostMapping("/list/page/vo/cache")
     public BaseResponse<Page<PictureVO>> listPictureVOByPageWithCache(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
@@ -265,6 +266,7 @@ public class PictureController {
     /**
      * 分页获取图片列表(用户, 带本地缓存)
      */
+    @Deprecated
     @PostMapping("/list/page/vo/cache/local")
     public BaseResponse<Page<PictureVO>> listPictureVOByPageWithLocalCache(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
@@ -298,6 +300,7 @@ public class PictureController {
     /**
      * 分页获取图片列表(用户, 多级缓存)
      */
+    @Deprecated
     @PostMapping("/list/page/vo/many")
     public BaseResponse<Page<PictureVO>> listPictureVOByPageWithMany(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();

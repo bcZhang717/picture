@@ -5,6 +5,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.zbc.annotations.AuthCheck;
 import com.zbc.constants.UserConstant;
 import com.zbc.domain.dto.DeleteRequest;
+import com.zbc.domain.dto.SpaceLevel;
 import com.zbc.domain.dto.space.SpaceAddRequest;
 import com.zbc.domain.dto.space.SpaceEditRequest;
 import com.zbc.domain.dto.space.SpaceQueryRequest;
@@ -13,6 +14,7 @@ import com.zbc.domain.pojo.Space;
 import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.BaseResponse;
 import com.zbc.domain.vo.SpaceVO;
+import com.zbc.enums.SpaceLevelEnum;
 import com.zbc.exception.BusinessException;
 import com.zbc.exception.ErrorCode;
 import com.zbc.service.SpaceService;
@@ -26,7 +28,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/space")
@@ -198,5 +203,23 @@ public class SpaceController {
         User currentUser = userService.getCurrentUser(request);
         long spaceId = spaceService.addSpace(addRequest, currentUser);
         return ResultUtils.success(spaceId);
+    }
+
+    /**
+     * 获取空间列表(便于前端展示)
+     *
+     * @return 获取的空间列表
+     */
+    @GetMapping("/list/level")
+    public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
+        SpaceLevelEnum[] values = SpaceLevelEnum.values();
+        List<SpaceLevel> list = Arrays.stream(values).map(spaceLevelEnum ->
+                new SpaceLevel(
+                        spaceLevelEnum.getValue(),
+                        spaceLevelEnum.getText(),
+                        spaceLevelEnum.getMaxCount(),
+                        spaceLevelEnum.getMaxSize()
+                )).collect(Collectors.toList());
+        return ResultUtils.success(list);
     }
 }

@@ -128,7 +128,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名称不能为空");
             }
             if (spaceLevel == null) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间等级不能为空");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间级别不能为空");
             }
         }
         // 修改空间
@@ -184,7 +184,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
         // 2. 非管理员用户只能创建普通级别的空间
         Long userId = loginUser.getId();
         space.setUserId(userId);
-        if (SpaceLevelEnum.COMMON.getValue() != space.getSpaceLevel() && !userService.isAdmin(loginUser)) {
+        if (SpaceLevelEnum.COMMON.getValue() != addRequest.getSpaceLevel() && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "普通用户只能创建指定级别的空间");
         }
         // 3. 一个用户只能创建一个空间(lock + 编程式事务)
