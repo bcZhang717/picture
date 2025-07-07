@@ -38,6 +38,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
@@ -579,6 +580,74 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
                 .collect(Collectors.toList())
                 .stream().map(PictureVO::objectToVO) // 转换为VO
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 图片批量操作
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void editPictureByBatch(PictureEditByBatchRequest editByBatchRequest, User loginUser) {
+        // 1. 参数校验
+        ThrowUtils.throwIf(editByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        List<Long> pictureIdList = editByBatchRequest.getPictureIdList();
+        Long spaceId = editByBatchRequest.getSpaceId();
+        String category = editByBatchRequest.getCategory();
+        List<String> tags = editByBatchRequest.getTags();
+        String nameRule = editByBatchRequest.getNameRule();
+        ThrowUtils.throwIf(pictureIdList == null || pictureIdList.isEmpty(), ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(spaceId == null, ErrorCode.PARAMS_ERROR);
+        // 2. 空间权限校验
+        Space space = spaceService.getById(spaceId);
+        if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间编辑权限");
+        }
+        // 3. 查询指定字段的图片
+        List<Picture> pictureList = this.lambdaQuery()
+                .select(Picture::getId, Picture::getSpaceId) // 仅查询 id 和 spaceId 字段
+                .eq(Picture::getSpaceId, spaceId)
+                .in(Picture::getId, pictureIdList)
+                .list();
+        if (pictureList == null || pictureList.isEmpty()) {
+            return;
+        }
+        // 4. 更新分类、标签
+        pictureList.forEach(picture -> {
+            if (StrUtil.isBlank(category)) {
+                picture.setCategory(category);
+            }
+            if (CollUtil.isEmpty(tags)) {
+                picture.setTags(JSONUtil.toJsonStr(tags));
+            }
+        });
+        // 5. 批量重命名图片
+        fillPictureWithNameRule(pictureList, nameRule);
+        // 6. 操作数据库
+        boolean updated = this.updateBatchById(pictureList);
+        ThrowUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR);
+    }
+
+    /**
+     * 批量重命名图片(规则: 图片{序号})
+     *
+     * @param pictureList 图片ID列表
+     * @param nameRule    图片命名规则
+     */
+    private void fillPictureWithNameRule(List<Picture> pictureList, String nameRule) {
+        if (CollUtil.isEmpty(pictureList) || StrUtil.isBlank(nameRule)) {
+            return;
+        }
+        long count = 1;
+        try {
+            for (Picture picture : pictureList) {
+                String pictureName = nameRule.replaceAll("\\{序号}", String.valueOf(count++));
+                picture.setName(pictureName);
+            }
+        } catch (Exception e) {
+            log.error("图片命名规则错误: {}", nameRule);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "图片命名规则错误");
+        }
     }
 }
 
