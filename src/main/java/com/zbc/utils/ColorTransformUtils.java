@@ -1,5 +1,7 @@
 package com.zbc.utils;
 
+import cn.hutool.core.util.StrUtil;
+
 /**
  * 工具类：计算颜色相似度
  */
@@ -16,8 +18,10 @@ public class ColorTransformUtils {
      * @return 标准颜色
      */
     public static String getStandardColor(String color) {
-        if (color.length() == 7) {
-            color = color.substring(0, 4) + "0" + color.substring(4, 7);
+        if (StrUtil.isNotBlank(color)) {
+            if (color.length() == 7) {
+                color = color.substring(0, 4) + "0" + color.substring(4, 7);
+            }
         }
         return color;
     }
