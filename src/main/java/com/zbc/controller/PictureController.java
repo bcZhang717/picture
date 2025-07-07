@@ -7,6 +7,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
 import com.zbc.annotations.AuthCheck;
+import com.zbc.api.imagesearch.ImageSearchApiFacade;
+import com.zbc.api.imagesearch.model.ImageSearchResult;
 import com.zbc.constants.UserConstant;
 import com.zbc.domain.dto.DeleteRequest;
 import com.zbc.domain.dto.picture.*;
@@ -404,4 +406,43 @@ public class PictureController {
     }
 
 
+    /**
+     * 以图搜图请求
+     *
+     * @param searchPictureByPictureRequest 请求参数
+     * @return 图片信息
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture oldPicture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        String url = oldPicture.getUrl();
+        if (!url.toLowerCase().endsWith(".jpg") && !url.toLowerCase().endsWith(".png") && !url.toLowerCase().endsWith(".jpeg")) {
+            url = url + "?imageMogr2/format/png"; // 添加格式转换
+        }
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(url);
+        return ResultUtils.success(resultList);
+    }
+
+    /**
+     * 以色搜图请求
+     *
+     * @param searchPictureByColorRequest 请求参数
+     * @param request                     当前登录用户
+     * @return 图片信息
+     */
+    @ApiOperation(value = "以色搜图")
+    @ApiOperationSupport(order = 3)
+    @PostMapping("/search/color")
+    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(searchPictureByColorRequest == null, ErrorCode.PARAMS_ERROR);
+        Long spaceId = searchPictureByColorRequest.getSpaceId();
+        String picColor = searchPictureByColorRequest.getPicColor();
+        User currentUser = userService.getCurrentUser(request);
+        List<PictureVO> pictureVOList = pictureService.searchPictureByColor(spaceId, picColor, currentUser);
+        return ResultUtils.success(pictureVOList);
+    }
 }

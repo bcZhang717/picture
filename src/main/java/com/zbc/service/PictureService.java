@@ -9,6 +9,7 @@ import com.zbc.domain.pojo.User;
 import com.zbc.domain.vo.PictureVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 
 public interface PictureService extends IService<Picture> {
@@ -102,4 +103,14 @@ public interface PictureService extends IService<Picture> {
     void deletePicture(Long pictureId, User loginUser);
 
     void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 图片颜色搜索
+     *
+     * @param spaceId   空间id
+     * @param picColor  图片颜色
+     * @param loginUser 当前登录用户
+     * @return 图片视图列表
+     */
+    List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser);
 }

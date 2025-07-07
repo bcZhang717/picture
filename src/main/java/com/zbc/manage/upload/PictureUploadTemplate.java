@@ -115,6 +115,9 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicWidth(width);
         uploadPictureResult.setPicHeight(height);
         uploadPictureResult.setPicFormat(compressCiObject.getFormat());
+        // TODO: new 对象?
+        ImageInfo imageInfo = new ImageInfo();
+        uploadPictureResult.setPicColor(imageInfo.getAve());
         // 计算宽高比
         double scale = NumberUtil.round(width * 1.0 / height, 2).doubleValue();
         uploadPictureResult.setPicScale(scale);
@@ -164,6 +167,7 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicWidth(width);
         uploadPictureResult.setPicHeight(height);
         uploadPictureResult.setPicFormat(imageInfo.getFormat());
+        uploadPictureResult.setPicColor(imageInfo.getAve());
         // 计算宽高比
         double scale = NumberUtil.round(width * 1.0 / height, 2).doubleValue();
         uploadPictureResult.setPicScale(scale);

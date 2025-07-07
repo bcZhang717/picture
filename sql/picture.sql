@@ -6,7 +6,7 @@ create table if not exists picture
     name         varchar(128)                       not null comment '图片名称',
     introduction varchar(512)                       null comment '简介',
     category     varchar(64)                        null comment '分类',
-    tags varchar(512) null comment '标签（JSON 数组）',
+    tags         varchar(512)                       null comment '标签（JSON 数组）',
     picSize      bigint                             null comment '图片体积',
     picWidth     int                                null comment '图片宽度',
     picHeight    int                                null comment '图片高度',
@@ -43,3 +43,7 @@ alter table picture
 
 -- 创建索引
 create index idx_spaceId on picture (spaceId);
+
+alter table picture
+    add column picColor varchar(16) null comment '图片主色调';
+
