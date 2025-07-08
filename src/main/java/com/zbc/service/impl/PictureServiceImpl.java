@@ -493,8 +493,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }*/
-        // 权限校验
-        this.checkPictureAuth(oldPicture, loginUser);
+        // 已改为注解鉴权
+        // this.checkPictureAuth(oldPicture, loginUser);
         transactionTemplate.execute(status -> {
             boolean result = this.removeById(pictureId);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -532,8 +532,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         long id = pictureEditRequest.getId();
         Picture oldPicture = this.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 校验权限
-        checkPictureAuth(oldPicture, loginUser);
+        // 校验权限, 已改为注解鉴权
+        // checkPictureAuth(oldPicture, loginUser);
         // 补充审核参数
         this.fillReviewParams(picture, loginUser);
         // 操作数据库
@@ -668,8 +668,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
         Picture picture = Optional.ofNullable(this.getById(pictureId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ERROR));
-        // 权限校验
-        checkPictureAuth(picture, loginUser);
+        // 校验权限, 已改为注解鉴权
+        // checkPictureAuth(picture, loginUser);
         // 构造请求参数
         CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
         CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();

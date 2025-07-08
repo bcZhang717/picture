@@ -12,6 +12,7 @@ import com.zbc.domain.vo.UserLoginVO;
 import com.zbc.domain.vo.UserVO;
 import com.zbc.enums.UserRoleEnum;
 import com.zbc.exception.BusinessException;
+import com.zbc.manage.auth.StpKit;
 import com.zbc.mapper.UserMapper;
 import com.zbc.service.UserService;
 import org.springframework.stereotype.Service;
@@ -114,6 +115,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(PARAMS_ERROR, "用户账号或密码输入错误");
         }
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);
         UserLoginVO userLoginVO = new UserLoginVO();
         BeanUtil.copyProperties(user, userLoginVO);
         return userLoginVO;

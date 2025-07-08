@@ -6,6 +6,7 @@ import com.zbc.domain.pojo.Picture;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -36,6 +37,12 @@ public class PictureVO implements Serializable {
      * 标签(注意类型, 与数据库字段类型不一致, 需要特别处理)
      */
     private List<String> tags;
+
+    /**
+     * 权限列表
+     */
+    private List<String> permissionList = new ArrayList<>();
+
 
     /**
      * 分类

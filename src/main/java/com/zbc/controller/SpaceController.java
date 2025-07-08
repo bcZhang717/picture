@@ -17,6 +17,7 @@ import com.zbc.domain.vo.SpaceVO;
 import com.zbc.enums.SpaceLevelEnum;
 import com.zbc.exception.BusinessException;
 import com.zbc.exception.ErrorCode;
+import com.zbc.manage.auth.SpaceUserAuthManager;
 import com.zbc.service.SpaceService;
 import com.zbc.service.UserService;
 import com.zbc.utils.ResultUtils;
@@ -41,6 +42,8 @@ public class SpaceController {
     private UserService userService;
     @Resource
     private SpaceService spaceService;
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     /**
      * 删除空间
@@ -126,6 +129,8 @@ public class SpaceController {
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
         // 获取封装类
         SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, userService.getCurrentUser(request));
+        spaceVO.setPermissionList(permissionList);
         return ResultUtils.success(spaceVO);
     }
 
