@@ -22,6 +22,7 @@ import com.zbc.service.SpaceUserService;
 import com.zbc.service.UserService;
 import com.zbc.utils.ThrowUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -39,6 +40,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     @Resource
     private UserService userService;
     @Resource
+    @Lazy
     private SpaceService spaceService;
 
     /**

@@ -26,6 +26,32 @@ spring:
   session:
     store-type: redis
     timeout: 2592000
+  shardingsphere:
+    datasource:
+      names: picture # 数据库名称
+      picture:
+        type: com.zaxxer.hikari.HikariDataSource # 数据源类型
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/picture
+        username: root
+        password: 123456
+    rules:
+      sharding:
+        tables:
+          picture: # 表名
+           actual-data-nodes: picture.picture # 库名.表名，动态分表
+           table-strategy:
+             standard:
+               sharding-column: spaceId # 根据哪个字段分表
+               sharding-algorithm-name: picture_sharding_algorithm # 使用自定义分表算法
+        sharding-algorithms:
+          picture_sharding_algorithm:
+            type: CLASS_BASED # 通过编写类自定义分表算法
+            props:
+              strategy: standard
+              algorithmClassName: com.zbc.sharding.PictureShardingAlgorithm # 分表类的全类名
+    props:
+      sql-show: true # 开启sql日志
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
