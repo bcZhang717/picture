@@ -163,7 +163,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>com.zbc.YunPictureApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>
