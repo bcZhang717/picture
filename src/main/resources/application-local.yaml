@@ -1,9 +1,9 @@
 cos:
   client:
-    host: https://zbc-picture-1335849645.cos.ap-chengdu.myqcloud.com # 存储桶域名
-    secretId: AKIDHWYQ92iBQUKwKWZBcrsgIFcqukPs79xa
-    secretKey: SghU5UfWCf1CAuRlslQs66tTlqhKjvte
-    region: ap-chengdu
-    bucket: zbc-picture-1335849645 # 存储桶名称
+    host: xxxxxxxxxxxxxxxxxxxxxx # 存储桶域名
+    secretId: xxxxxxxxxxxxxxxxxxxxx
+    secretKey: xxxxxxxxxxxxxxxxxx
+    region: xxxxxxxxxxxxxxxxxx
+    bucket: xxxxxxxxxxxxxxxxxxxx # 存储桶名称
 aliyun:
-  apiKey: LTAI5t5uDH3rw8dMPuodn8Jj
+  apiKey: xxxxxxxxxxx
